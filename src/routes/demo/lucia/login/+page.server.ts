@@ -15,28 +15,42 @@ export const load: PageServerLoad = async (event) => {
 		return redirect(302, '/demo/lucia');
 	}
 	return {
-		form: await superValidate(zod(loginSchema)),
+		form: await superValidate(zod(loginSchema))
 	};
 };
 
 export const actions: Actions = {
 	login: async (event) => {
-		const formData = await event.request.formData();
-		const username = formData.get('username');
-		const password = formData.get('password');
+		const form = await superValidate(event, zod(loginSchema));
+
+		console.log('login action');
+		const username = form.data.userName;
+		const password = form.data.password;
+
+		console.log('username', username);
+		console.log('password', password);
 
 		if (!validateUsername(username)) {
-			return fail(400, { message: 'Invalid username' });
+			return fail(400, {
+				message: 'Invalid username',
+				form
+			});
 		}
 		if (!validatePassword(password)) {
-			return fail(400, { message: 'Invalid password' });
+			return fail(400, {
+				message: 'Invalid password',
+				form
+			});
 		}
 
 		const results = await db.select().from(table.user).where(eq(table.user.username, username));
 
 		const existingUser = results.at(0);
 		if (!existingUser) {
-			return fail(400, { message: 'Incorrect username or password' });
+			return fail(400, {
+				message: 'Incorrect username or password',
+				form
+			});
 		}
 
 		const validPassword = await verify(existingUser.passwordHash, password, {
@@ -46,7 +60,10 @@ export const actions: Actions = {
 			parallelism: 1
 		});
 		if (!validPassword) {
-			return fail(400, { message: 'Incorrect username or password' });
+			return fail(400, {
+				message: 'Incorrect username or password',
+				form
+			});
 		}
 
 		const sessionToken = auth.generateSessionToken();
@@ -56,15 +73,26 @@ export const actions: Actions = {
 		return redirect(302, '/demo/lucia');
 	},
 	register: async (event) => {
-		const formData = await event.request.formData();
-		const username = formData.get('username');
-		const password = formData.get('password');
+		const form = await superValidate(event, zod(loginSchema));
+
+		console.log('register action');
+		const username = form.data.userName;
+		const password = form.data.password;
+
+		console.log('username', username);
+		console.log('password', password);
 
 		if (!validateUsername(username)) {
-			return fail(400, { message: 'Invalid username' });
+			return fail(400, {
+				message: 'Invalid username',
+				form
+			});
 		}
 		if (!validatePassword(password)) {
-			return fail(400, { message: 'Invalid password' });
+			return fail(400, {
+				message: 'Invalid password',
+				form
+			});
 		}
 
 		const userId = generateUserId();
@@ -83,7 +111,10 @@ export const actions: Actions = {
 			const session = await auth.createSession(sessionToken, userId);
 			auth.setSessionTokenCookie(event, sessionToken, session.expiresAt);
 		} catch (e) {
-			return fail(500, { message: 'An error has occurred' });
+			return fail(500, {
+				message: 'An error has occurred',
+				form
+			});
 		}
 		return redirect(302, '/demo/lucia');
 	}
