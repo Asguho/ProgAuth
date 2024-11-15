@@ -6,12 +6,17 @@ import * as auth from '$lib/server/auth';
 import { db } from '$lib/server/db';
 import * as table from '$lib/server/db/schema';
 import type { Actions, PageServerLoad } from './$types';
+import { loginSchema } from './schema';
+import { zod } from 'sveltekit-superforms/adapters';
+import { superValidate } from 'sveltekit-superforms';
 
 export const load: PageServerLoad = async (event) => {
 	if (event.locals.user) {
 		return redirect(302, '/demo/lucia');
 	}
-	return {};
+	return {
+		form: await superValidate(zod(loginSchema)),
+	};
 };
 
 export const actions: Actions = {
