@@ -5,14 +5,18 @@
 	import { type SuperValidated, type Infer, superForm } from 'sveltekit-superforms';
 	import { zodClient } from 'sveltekit-superforms/adapters';
 
-	export let data: SuperValidated<Infer<LoginSchema>>;
+	let { data }: { data: SuperValidated<Infer<LoginSchema>> } = $props();
 
 	const form = superForm(data, {
 		validators: zodClient(loginSchema),
 		dataType: 'json'
 	});
 
-	const { form: formData, enhance } = form;
+	const { form: formData, enhance, errors } = form;
+
+	$effect(() => {
+		console.log($errors);
+	});
 </script>
 
 <h1 class="mb-3 mt-10 text-center text-4xl font-bold">Login</h1>
@@ -37,7 +41,12 @@
 		<Form.Description>Must be at least 8 characters long.</Form.Description>
 		<Form.FieldErrors />
 	</Form.Field>
-
+	{#if $errors._errors}
+		{#each $errors._errors as error}
+			<p class="text-sm font-medium text-destructive">{error}</p>
+		{/each}
+		<!-- content here -->
+	{/if}
 	<Form.Button>Login</Form.Button>
 	<Form.Button formaction="?/register">Register</Form.Button>
 </form>
